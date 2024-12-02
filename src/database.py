@@ -1,67 +1,55 @@
 import sqlite3
 
-DB_NAME = "password_manager.db"
+def connect_db():
+    return sqlite3.connect('password_manager.db')
 
 def create_tables():
-    with sqlite3.connect(DB_NAME) as conn:
-        cursor = conn.cursor()
-        # Tabla de usuarios
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                email TEXT UNIQUE NOT NULL
-            )
-        """)
-        # Tabla de contraseñas
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS passwords (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                category TEXT,
-                name TEXT,
-                username TEXT,
-                password TEXT,
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            )
-        """)
+    conn = connect_db()
+    cursor = conn.cursor()
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        password TEXT NOT NULL,
+        email TEXT NOT NULL
+    )
+    ''')
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS passwords (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        category TEXT NOT NULL,
+        name TEXT NOT NULL,
+        username TEXT NOT NULL,
+        password TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+    ''')
+
+    conn.commit()
+    conn.close()
 
 def register_user(username, password, email):
-    try:
-        with sqlite3.connect(DB_NAME) as conn:
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO users (username, password, email) VALUES (?, ?, ?)", (username, password, email))
-            conn.commit()
-            return True
-    except sqlite3.IntegrityError:
-        return False  # Usuario o correo ya existe
-
-def validate_login(username, password):
-    with sqlite3.connect(DB_NAME) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM users WHERE username = ? AND password = ?", (username, password))
-        user = cursor.fetchone()
-        return user[0] if user else None
-
-def get_user_id(username):
-    with sqlite3.connect(DB_NAME) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
-        user = cursor.fetchone()
-        return user[0] if user else None
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO users (username, password, email) VALUES (?, ?, ?)", (username, password, email))
+    conn.commit()
+    conn.close()
 
 def save_password(user_id, category, name, username, password):
-    with sqlite3.connect(DB_NAME) as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO passwords (user_id, category, name, username, password)
-            VALUES (?, ?, ?, ?, ?)
-        """, (user_id, category, name, username, password))
-        conn.commit()
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO passwords (user_id, category, name, username, password) VALUES (?, ?, ?, ?, ?)",
+                   (user_id, category, name, username, password))
+    conn.commit()
+    conn.close()
 
-def delete_user(username):
-    with sqlite3.connect(DB_NAME) as conn:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM users WHERE username = ?", (username,))
-        conn.commit()
+def validate_login(username, password):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
+    result = cursor.fetchone()
+    conn.close()
+    return result is not None
