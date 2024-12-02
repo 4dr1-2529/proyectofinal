@@ -1,7 +1,9 @@
 import sqlite3
 
+
 def connect_db():
     return sqlite3.connect('password_manager.db')
+
 
 def create_tables():
     conn = connect_db()
@@ -31,12 +33,14 @@ def create_tables():
     conn.commit()
     conn.close()
 
+
 def register_user(username, password, email):
     conn = connect_db()
     cursor = conn.cursor()
     cursor.execute("INSERT INTO users (username, password, email) VALUES (?, ?, ?)", (username, password, email))
     conn.commit()
     conn.close()
+
 
 def save_password(user_id, category, name, username, password):
     conn = connect_db()
@@ -46,6 +50,7 @@ def save_password(user_id, category, name, username, password):
     conn.commit()
     conn.close()
 
+
 def validate_login(username, password):
     conn = connect_db()
     cursor = conn.cursor()
@@ -53,3 +58,16 @@ def validate_login(username, password):
     result = cursor.fetchone()
     conn.close()
     return result is not None
+
+
+def get_user_id(username):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
+    result = cursor.fetchone()
+    conn.close()
+
+    if result:
+        return result[0]  # Retorna el id del usuario
+    else:
+        return None  # Si no se encuentra el usuario, retorna None
